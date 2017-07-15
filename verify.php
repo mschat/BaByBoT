@@ -5,7 +5,7 @@ $access_token = 'KuCXzRz4QBneDsSyVFbSPocVsbufOVxWuhs+vg9XlhqkfXfe3JolM41YUAHV6FS
 
 DnyilFU=';
 
-$url = 'https://api.line.me/v1/oauth/verify';
+$url = 'https://powerful-sea-58445.herokuapp.com/verify.php';
 
 $headers = array('Authorization: Bearer ' . $access_token);
 
