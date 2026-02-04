@@ -1,52 +1,50 @@
 <?php
-// กำหนดค่า Channel Access Token
-$accessToken = '2BNK6+03zA3wkBW5E+fBBeS3sfOOFI90fXjiOOq73kjmQUV3wt7hLdi/rLdu/3soVl/6OIwNpVf5XY4IWbBrJFG2iS/k3kJOwOQ6pKj/9iyfzQPHu7BKq1Ypx8czHSG14sGs2XsDC2QsEtamK/C9MAdB04t89/1O/w1cDnyilFU=';
+// 1. ใส่ Channel Access Token ที่ได้จาก LINE Developers
+$access_token = '2BNK6+03zA3wkBW5E+fBBeS3sfOOFI90fXjiOOq73kjmQUV3wt7hLdi/rLdu/3soVl/6OIwNpVf5XY4IWbBrJFG2iS/k3kJOwOQ6pKj/9iyfzQPHu7BKq1Ypx8czHSG14sGs2XsDC2QsEtamK/C9MAdB04t89/1O/w1cDnyilFU=';
 
-// รับข้อมูลจาก LINE webhook
+// 2. รับข้อมูลที่ LINE ส่งมา
 $content = file_get_contents('php://input');
 $events = json_decode($content, true);
 
-// ตรวจสอบว่าข้อมูลที่ได้รับไม่ใช่ค่าว่าง
-if (!is_null($events)) {
-    // วนลูปข้อมูลที่ได้รับมา
+// 3. ตรวจสอบว่ามีข้อมูลส่งมาจริงไหม
+if (!is_null($events['events'])) {
     foreach ($events['events'] as $event) {
-        // ตรวจสอบว่าเป็นข้อความประเภท text และเป็นคำว่า "เชื่อมต่อหรือยัง"
-        if ($event['type'] == 'message' && $event['message']['type'] == 'text' && strtolower($event['message']['text']) == 'เชื่อมต่อหรือยัง') {
+        
+        // ตรวจสอบว่าเป็น Message ประเภทข้อความ (Text)
+        if ($event['type'] == 'message' && $event['message']['type'] == 'text') {
             
-            // ข้อมูลการตอบกลับ
-            $replyToken = $event['replyToken'];
+            $replyToken = $event['replyToken']; // ใช้สำหรับตอบกลับ
+            $userText = $event['message']['text']; // ข้อความที่ User พิมพ์มา
+
+            // 4. เตรียมข้อมูลสำหรับตอบกลับ (Echo กลับไป)
             $messages = [
-                'type' => 'text',
-                'text' => 'เชื่อมต่อเเล้วค้าบบบ พร้อมลุยยยเเล้วค้าบบลูกเพ้'
-            ];
-
-            // ส่งข้อความตอบกลับ
-            $url = 'https://api.line.me/v2/bot/message/reply';
-            $data = [
                 'replyToken' => $replyToken,
-                'messages' => [$messages],
+                'messages' => [
+                    [
+                        'type' => 'text',
+                        'text' => 'บอทได้รับข้อความว่า: ' . $userText
+                    ]
+                ]
             ];
-            $post = json_encode($data);
 
-            // กำหนด Header ของ cURL
-            $headers = array(
-                'Content-Type: application/json',
-                'Authorization: Bearer ' . $accessToken,
-            );
+            // 5. ส่งข้อมูลกลับไปด้วย cURL
+            $url = 'https://api.line.me/v2/bot/message/reply';
+            $post = json_encode($messages);
+            $headers = array('Content-Type: application/json', 'Authorization: Bearer ' . $access_token);
 
-            // ใช้ cURL ในการส่งข้อความกลับไป
             $ch = curl_init($url);
             curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
             curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
             curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+            
             $result = curl_exec($ch);
             curl_close($ch);
-
-            // แสดงผลลัพธ์ที่ส่งกลับมา
-            echo $result . "\r\n";
         }
     }
 }
-?>
+
+// ตอบกลับสถานะ 200 ให้ LINE Platform ทราบว่าเราได้รับข้อมูลแล้ว
+http_response_code(200);
+echo "OK";
